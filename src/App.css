@@ -265,39 +265,6 @@ html, body, #root {
 }
 
 /* HUD result banner (inline, replaces modal) */
-.hud-result {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.hud-result-text {
-  font-size: 1.1rem;
-  font-weight: 700;
-}
-
-.hud-result-win .hud-result-text {
-  color: #4ADE80;
-}
-
-.hud-result-lose .hud-result-text {
-  color: #F87171;
-}
-
-.hud-result-time {
-  font-size: 0.95rem;
-  color: #999;
-  font-variant-numeric: tabular-nums;
-}
-
-.hud-btn-restart {
-  background: rgba(74, 144, 217, 0.3);
-  border-color: #4A90D9;
-}
-
-.hud-btn-restart:hover {
-  background: rgba(74, 144, 217, 0.5);
-}
 
 /* Tile emoji label */
 .tile-emoji {
@@ -306,7 +273,111 @@ html, body, #root {
   filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
 }
 
-/* ========== Modal ========== */
+/* ========== Defeat Animation ========== */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 50%, 90% { transform: translateX(-4px); }
+  30%, 70% { transform: translateX(4px); }
+}
+
+@keyframes flash {
+  0% { opacity: 0.5; }
+  100% { opacity: 0; }
+}
+
+.game-explode {
+  animation: shake 0.5s ease-out;
+}
+
+.explode-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  background: radial-gradient(circle, rgba(255, 50, 50, 0.6), rgba(255, 0, 0, 0.2));
+  animation: flash 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+/* ========== Fireworks Canvas ========== */
+.fireworks-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  pointer-events: none;
+}
+
+/* ========== Result Panel (slide-in from right) ========== */
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+.result-panel {
+  position: absolute;
+  top: 60px;
+  right: 0;
+  z-index: 12;
+  width: 220px;
+  padding: 1.2rem;
+  background: rgba(15, 20, 35, 0.85);
+  backdrop-filter: blur(10px);
+  border-left: 3px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0 0 0 12px;
+  animation: slideInRight 0.4s ease-out;
+}
+
+.result-win {
+  border-left-color: rgba(74, 222, 128, 0.5);
+}
+
+.result-lose {
+  border-left-color: rgba(248, 113, 113, 0.5);
+}
+
+.result-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.result-win .result-title { color: #4ADE80; }
+.result-lose .result-title { color: #F87171; }
+
+.result-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1.2rem;
+}
+
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+
+.result-label {
+  color: #888;
+}
+
+.result-value {
+  color: #E0E0E0;
+  font-weight: 500;
+}
+
+.result-time {
+  color: #74B9FF;
+  font-variant-numeric: tabular-nums;
+}
+
+.result-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* ========== Modal (legacy, can be removed) ========== */
 .modal-overlay {
   position: absolute;
   inset: 0;
