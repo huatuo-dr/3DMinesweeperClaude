@@ -4,10 +4,12 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { SphereMesh } from './SphereMesh';
 
-export function GameScene({ tiles, onReveal, onFlag, phase }) {
+export function GameScene({ tiles, onReveal, onFlag, phase, mode }) {
+  const isCube = mode === 'cube';
+
   return (
     <Canvas
-      camera={{ position: [0, 0, 3], fov: 60 }}
+      camera={{ position: [0, 0, isCube ? 4.5 : 3], fov: 60 }}
       style={{ width: '100%', height: '100%' }}
       onContextMenu={(e) => e.preventDefault()}
     >
@@ -22,8 +24,8 @@ export function GameScene({ tiles, onReveal, onFlag, phase }) {
       />
       <OrbitControls
         enablePan={false}
-        minDistance={1.8}
-        maxDistance={6}
+        minDistance={isCube ? 2.5 : 1.8}
+        maxDistance={isCube ? 8 : 6}
         enableDamping
         dampingFactor={0.1}
       />

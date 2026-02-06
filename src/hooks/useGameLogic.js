@@ -2,20 +2,39 @@
 
 import { useReducer, useCallback, useRef, useEffect } from 'react';
 import { generateGoldberg } from '../utils/goldberg';
+import { generateCubeSurface } from '../utils/cubeSurface';
 import {
   initGameTiles, placeMines, revealTile,
   toggleFlag, checkWin, revealAllMines,
 } from '../utils/minesweeper';
 
-export const DIFFICULTIES = {
-  easy:   { frequency: 3, mineRatio: 0.15, label: '简单' },
-  medium: { frequency: 5, mineRatio: 0.18, label: '中等' },
-  hard:   { frequency: 7, mineRatio: 0.20, label: '困难' },
+// Size configurations for each mode
+export const SIZE_CONFIG = {
+  sphere: {
+    tiny:   { param: 2, label: '迷你' },   // 10*4+2 = 42
+    small:  { param: 3, label: '小' },      // 10*9+2 = 92
+    medium: { param: 5, label: '中' },      // 10*25+2 = 252
+    large:  { param: 7, label: '大' },      // 10*49+2 = 492
+    huge:   { param: 10, label: '巨大' },   // 10*100+2 = 1002
+  },
+  cube: {
+    tiny:   { param: 3, label: '迷你' },    // 6*9 = 54
+    small:  { param: 5, label: '小' },      // 6*25 = 150
+    medium: { param: 8, label: '中' },      // 6*64 = 384
+    large:  { param: 12, label: '大' },     // 6*144 = 864
+    huge:   { param: 16, label: '巨大' },   // 6*256 = 1536
+  },
 };
+
+// Compute tile count for a given mode and size
+export function getTileCount(mode, sizeKey) {
+  const p = SIZE_CONFIG[mode][sizeKey].param;
+  return mode === 'sphere' ? 10 * p * p + 2 : 6 * p * p;
+}
 
 const initialState = {
   phase: 'start',
-  difficulty: null,
+  gameConfig: null,
   tiles: [],
   mineCount: 0,
   flagCount: 0,
@@ -26,8 +45,8 @@ const initialState = {
 function reducer(state, action) {
   switch (action.type) {
     case 'START_GAME': {
-      const { tiles, mineCount, difficulty } = action.payload;
-      return { ...initialState, phase: 'playing', difficulty, tiles, mineCount };
+      const { tiles, mineCount, gameConfig } = action.payload;
+      return { ...initialState, phase: 'playing', gameConfig, tiles, mineCount };
     }
 
     case 'REVEAL': {
@@ -87,14 +106,16 @@ export function useGameLogic() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const timerRef = useRef(null);
 
-  const startGame = useCallback((diffKey) => {
-    const diff = DIFFICULTIES[diffKey];
-    const goldberg = generateGoldberg(diff.frequency);
-    const tiles = initGameTiles(goldberg);
-    const mineCount = Math.floor(tiles.length * diff.mineRatio);
+  const startGame = useCallback(({ mode, size, density }) => {
+    const param = SIZE_CONFIG[mode][size].param;
+    const geometryTiles = mode === 'sphere'
+      ? generateGoldberg(param)
+      : generateCubeSurface(param);
+    const tiles = initGameTiles(geometryTiles);
+    const mineCount = Math.floor(tiles.length * density);
     dispatch({
       type: 'START_GAME',
-      payload: { tiles, mineCount, difficulty: { ...diff, key: diffKey } },
+      payload: { tiles, mineCount, gameConfig: { mode, size, density } },
     });
   }, []);
 
