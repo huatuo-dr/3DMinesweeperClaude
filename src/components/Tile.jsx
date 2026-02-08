@@ -16,7 +16,7 @@ const COLORS = {
 const NUMBER_EMOJIS = ['', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣'];
 
 // Html label that hides when tile faces away from camera
-function FacingHtml({ position, tileCenter, tileNormal, children }) {
+function FacingHtml({ position, tileCenter, tileNormal, distanceFactor, children }) {
   const spanRef = useRef();
 
   useFrame(({ camera }) => {
@@ -33,17 +33,17 @@ function FacingHtml({ position, tileCenter, tileNormal, children }) {
     <Html
       position={position}
       center
-      distanceFactor={6}
+      distanceFactor={distanceFactor}
       style={{ pointerEvents: 'none', userSelect: 'none' }}
     >
-      <span ref={spanRef} className="tile-emoji">{children}</span>
+      <span ref={spanRef} className="tile-emoji" style={{ display: 'none' }}>{children}</span>
     </Html>
   );
 }
 
 export function Tile({ tile, onReveal, onFlag, phase }) {
-  const longPressTimer = useRef(null);
-  const longPressFired = useRef(false);
+  const lastClickTime = useRef(0);
+  const singleClickTimer = useRef(null);
   const meshRef = useRef();
 
   // Pre-compute tile normal as array (for FacingHtml)
@@ -52,6 +52,21 @@ export function Tile({ tile, onReveal, onFlag, phase }) {
     const c = new Vector3(...tile.center).normalize();
     return [c.x, c.y, c.z];
   }, [tile.center, tile.normal]);
+
+  // Dynamic distanceFactor based on average edge length
+  const distanceFactor = useMemo(() => {
+    const v = tile.vertices;
+    let sum = 0;
+    for (let i = 0; i < v.length; i++) {
+      const next = (i + 1) % v.length;
+      const dx = v[next][0] - v[i][0];
+      const dy = v[next][1] - v[i][1];
+      const dz = v[next][2] - v[i][2];
+      sum += Math.sqrt(dx * dx + dy * dy + dz * dz);
+    }
+    const edgeLen = sum / v.length;
+    return Math.max(edgeLen * 40, 6);
+  }, [tile.vertices]);
 
   // Build tile geometry once (fan triangulation from center)
   const geometry = useMemo(() => {
@@ -101,44 +116,34 @@ export function Tile({ tile, onReveal, onFlag, phase }) {
     return COLORS.revealed;
   }, [tile.isFlagged, tile.isRevealed, tile.isMine]);
 
-  // Pointer handlers
+  // Right-click → flag (desktop)
   const handlePointerDown = useCallback((e) => {
     e.stopPropagation();
-    longPressFired.current = false;
-
     if (e.button === 2) {
       onFlag(tile.id);
-      return;
     }
-
-    longPressTimer.current = setTimeout(() => {
-      longPressFired.current = true;
-      onFlag(tile.id);
-    }, 450);
   }, [tile.id, onFlag]);
 
-  const handlePointerUp = useCallback(() => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-  }, []);
-
-  const handlePointerLeave = useCallback(() => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-    if (meshRef.current) {
-      meshRef.current.material.emissive.setHex(0x000000);
-    }
-  }, []);
-
+  // Single click → reveal (delayed 300ms), double click → flag
   const handleClick = useCallback((e) => {
     e.stopPropagation();
-    if (longPressFired.current) return;
-    onReveal(tile.id);
-  }, [tile.id, onReveal]);
+    const now = Date.now();
+    const elapsed = now - lastClickTime.current;
+    lastClickTime.current = now;
+
+    if (elapsed < 300 && singleClickTimer.current) {
+      // Double tap → flag
+      clearTimeout(singleClickTimer.current);
+      singleClickTimer.current = null;
+      onFlag(tile.id);
+    } else {
+      // Single tap → reveal after delay
+      singleClickTimer.current = setTimeout(() => {
+        singleClickTimer.current = null;
+        onReveal(tile.id);
+      }, 300);
+    }
+  }, [tile.id, onReveal, onFlag]);
 
   const handlePointerOver = useCallback(() => {
     if (!tile.isRevealed && !tile.isFlagged && meshRef.current) {
@@ -169,8 +174,6 @@ export function Tile({ tile, onReveal, onFlag, phase }) {
         ref={meshRef}
         geometry={geometry}
         onPointerDown={interactive ? handlePointerDown : undefined}
-        onPointerUp={interactive ? handlePointerUp : undefined}
-        onPointerLeave={interactive ? handlePointerLeave : undefined}
         onClick={interactive ? handleClick : undefined}
         onPointerOver={interactive ? handlePointerOver : undefined}
         onPointerOut={interactive ? handlePointerOut : undefined}
@@ -183,6 +186,7 @@ export function Tile({ tile, onReveal, onFlag, phase }) {
           position={labelPosition}
           tileCenter={tile.center}
           tileNormal={tileNormal}
+          distanceFactor={distanceFactor}
         >
           {labelContent}
         </FacingHtml>

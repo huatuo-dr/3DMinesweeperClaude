@@ -11,18 +11,18 @@ import {
 // Size configurations for each mode
 export const SIZE_CONFIG = {
   sphere: {
-    tiny:   { param: 2, label: '迷你' },   // 10*4+2 = 42
-    small:  { param: 3, label: '小' },      // 10*9+2 = 92
-    medium: { param: 5, label: '中' },      // 10*25+2 = 252
-    large:  { param: 7, label: '大' },      // 10*49+2 = 492
-    huge:   { param: 10, label: '巨大' },   // 10*100+2 = 1002
+    tiny:   { param: 2, label: '迷你' },
+    small:  { param: 3, label: '小' },
+    medium: { param: 5, label: '中' },
+    large:  { param: 7, label: '大' },
+    huge:   { param: 10, label: '巨大' },
   },
   cube: {
-    tiny:   { param: 3, label: '迷你' },    // 6*9 = 54
-    small:  { param: 5, label: '小' },      // 6*25 = 150
-    medium: { param: 8, label: '中' },      // 6*64 = 384
-    large:  { param: 12, label: '大' },     // 6*144 = 864
-    huge:   { param: 16, label: '巨大' },   // 6*256 = 1536
+    tiny:   { param: 3, label: '迷你' },
+    small:  { param: 5, label: '小' },
+    medium: { param: 8, label: '中' },
+    large:  { param: 12, label: '大' },
+    huge:   { param: 16, label: '巨大' },
   },
 };
 
@@ -40,13 +40,21 @@ const initialState = {
   flagCount: 0,
   timer: 0,
   firstClick: true,
+  history: null,    // snapshot before last reveal (for undo)
+  undoCount: 0,     // total undos used this game
 };
 
 function reducer(state, action) {
   switch (action.type) {
     case 'START_GAME': {
       const { tiles, mineCount, gameConfig } = action.payload;
-      return { ...initialState, phase: 'playing', gameConfig, tiles, mineCount };
+      return {
+        ...initialState,
+        phase: 'playing',
+        gameConfig,
+        tiles,
+        mineCount,
+      };
     }
 
     case 'REVEAL': {
@@ -62,9 +70,22 @@ function reducer(state, action) {
         firstClick = false;
       }
 
+      // Save snapshot before reveal for undo
+      const history = {
+        tiles: tiles.map(t => ({ ...t })),
+        flagCount: state.flagCount,
+        firstClick,
+      };
+
       // Hit a mine
       if (tiles[tileId].isMine) {
-        return { ...state, tiles: revealAllMines(tiles), phase: 'lost', firstClick };
+        return {
+          ...state,
+          tiles: revealAllMines(tiles),
+          phase: 'lost',
+          firstClick,
+          history,
+        };
       }
 
       // Normal reveal
@@ -74,6 +95,7 @@ function reducer(state, action) {
         tiles: newTiles,
         phase: checkWin(newTiles) ? 'won' : 'playing',
         firstClick,
+        history,
       };
     }
 
@@ -86,6 +108,19 @@ function reducer(state, action) {
         ...state,
         tiles: toggleFlag(state.tiles, tileId),
         flagCount: state.flagCount + (tile.isFlagged ? -1 : 1),
+      };
+    }
+
+    case 'UNDO': {
+      if (state.phase !== 'lost' || !state.history) return state;
+      return {
+        ...state,
+        tiles: state.history.tiles,
+        flagCount: state.history.flagCount,
+        firstClick: state.history.firstClick,
+        phase: 'playing',
+        history: null,
+        undoCount: state.undoCount + 1,
       };
     }
 
@@ -127,6 +162,10 @@ export function useGameLogic() {
     dispatch({ type: 'FLAG', payload: { tileId } });
   }, []);
 
+  const handleUndo = useCallback(() => {
+    dispatch({ type: 'UNDO' });
+  }, []);
+
   const resetGame = useCallback(() => {
     dispatch({ type: 'RESET' });
   }, []);
@@ -146,5 +185,5 @@ export function useGameLogic() {
     };
   }, [state.phase]);
 
-  return { ...state, startGame, handleReveal, handleFlag, resetGame };
+  return { ...state, startGame, handleReveal, handleFlag, handleUndo, resetGame };
 }

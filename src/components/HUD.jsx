@@ -1,6 +1,6 @@
-// HUD overlay: timer, mine counter, back button
+// HUD overlay: timer, mine counter, back button, help button
 
-export function HUD({ timer, mineCount, flagCount, onReset }) {
+export function HUD({ timer, mineCount, flagCount, onReset, onHelp }) {
   const formatTime = (s) => {
     const min = Math.floor(s / 60);
     const sec = s % 60;
@@ -16,6 +16,9 @@ export function HUD({ timer, mineCount, flagCount, onReset }) {
         <span className="hud-mines">💣 {mineCount - flagCount}</span>
         <span className="hud-timer">⏱ {formatTime(timer)}</span>
       </div>
+      <button className="hud-btn hud-help-btn" onClick={onHelp}>
+        ?
+      </button>
     </div>
   );
 }

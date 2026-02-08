@@ -306,7 +306,7 @@ html, body, #root {
   pointer-events: none;
 }
 
-/* ========== Result Panel (slide-in from right) ========== */
+/* ========== Result Panel (slide-in from right, collapsible) ========== */
 @keyframes slideInRight {
   from { transform: translateX(100%); opacity: 0; }
   to   { transform: translateX(0);    opacity: 1; }
@@ -319,11 +319,58 @@ html, body, #root {
   z-index: 12;
   width: 220px;
   padding: 1.2rem;
+  padding-top: 2rem;
   background: rgba(15, 20, 35, 0.85);
   backdrop-filter: blur(10px);
   border-left: 3px solid rgba(255, 255, 255, 0.1);
   border-radius: 0 0 0 12px;
   animation: slideInRight 0.4s ease-out;
+}
+
+.result-collapse-btn {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: #999;
+  cursor: pointer;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.result-collapse-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #FFF;
+}
+
+.result-toggle-btn {
+  position: absolute;
+  top: 60px;
+  right: 0;
+  z-index: 12;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 8px 0 0 8px;
+  background: rgba(15, 20, 35, 0.85);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.result-toggle-btn:hover {
+  background: rgba(15, 20, 35, 0.95);
 }
 
 .result-win {
@@ -457,6 +504,78 @@ html, body, #root {
 
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.15);
+}
+
+.btn-undo {
+  background: rgba(255, 165, 2, 0.2);
+  color: #FFA502;
+  border: 1px solid rgba(255, 165, 2, 0.4);
+}
+
+.btn-undo:hover {
+  background: rgba(255, 165, 2, 0.35);
+}
+
+/* ========== Help Button & Overlay ========== */
+.hud-help-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.help-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+}
+
+.help-content {
+  background: #1E293B;
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  max-width: 280px;
+  width: 90%;
+}
+
+.help-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #E8E8E8;
+}
+
+.help-items {
+  text-align: left;
+  margin-bottom: 1.2rem;
+}
+
+.help-items p {
+  font-size: 0.9rem;
+  color: #CCC;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.help-items p:last-child {
+  border-bottom: none;
+}
+
+.help-close {
+  width: 100%;
 }
 
 /* ========== Mobile Responsive ========== */
