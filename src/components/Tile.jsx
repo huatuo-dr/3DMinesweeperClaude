@@ -15,25 +15,36 @@ const COLORS = {
 // Emoji digits for adjacent mine counts
 const NUMBER_EMOJIS = ['', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣'];
 
-// Html label that hides when tile faces away from camera
-function FacingHtml({ position, tileCenter, tileNormal, distanceFactor, children }) {
+// Html label that hides when facing away, with manual distance-based scaling
+function FacingHtml({ position, tileCenter, tileNormal, scaleFactor, children }) {
   const spanRef = useRef();
 
   useFrame(({ camera }) => {
     if (!spanRef.current) return;
-    // Dot product: tile normal vs (camera - tileCenter) direction
+
+    // Visibility: dot product of tile normal vs camera direction
     const dx = camera.position.x - tileCenter[0];
     const dy = camera.position.y - tileCenter[1];
     const dz = camera.position.z - tileCenter[2];
     const dot = dx * tileNormal[0] + dy * tileNormal[1] + dz * tileNormal[2];
-    spanRef.current.style.display = dot > 0 ? '' : 'none';
+
+    if (dot <= 0) {
+      spanRef.current.style.display = 'none';
+      return;
+    }
+
+    spanRef.current.style.display = 'inline-block';
+
+    // Manual scale: proportional to tile size, inversely to camera distance
+    const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    const scale = scaleFactor / dist;
+    spanRef.current.style.transform = `scale(${scale})`;
   });
 
   return (
     <Html
       position={position}
       center
-      distanceFactor={distanceFactor}
       style={{ pointerEvents: 'none', userSelect: 'none' }}
     >
       <span ref={spanRef} className="tile-emoji" style={{ display: 'none' }}>{children}</span>
@@ -53,8 +64,8 @@ export function Tile({ tile, onReveal, onFlag, phase }) {
     return [c.x, c.y, c.z];
   }, [tile.center, tile.normal]);
 
-  // Dynamic distanceFactor based on average edge length
-  const distanceFactor = useMemo(() => {
+  // Scale factor based on average edge length (manual scaling, bypasses distanceFactor)
+  const scaleFactor = useMemo(() => {
     const v = tile.vertices;
     let sum = 0;
     for (let i = 0; i < v.length; i++) {
@@ -186,7 +197,7 @@ export function Tile({ tile, onReveal, onFlag, phase }) {
           position={labelPosition}
           tileCenter={tile.center}
           tileNormal={tileNormal}
-          distanceFactor={distanceFactor}
+          scaleFactor={scaleFactor}
         >
           {labelContent}
         </FacingHtml>
