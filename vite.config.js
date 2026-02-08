@@ -3,5 +3,5 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ command }) => ({
   plugins: [react()],
-  base: command === 'build' ? '/3DMinesweeperTrae/' : '/',
+  base: command === 'build' ? '/3DMinesweeperClaude/' : '/',
 }));
